@@ -6,7 +6,7 @@
 # It implements a parser for auditd log files
 #
 # Author: Matt Baudendistel
-# Version : 0.1
+# Version : 0.2
 # Date : 02/11/12
 #
 # Copyright 2009-2011 Matt Baudendistel˝
@@ -38,7 +38,7 @@ use vars qw($VERSION @ISA);
 @ISA = ( "Log2t::base::input" );
 
 # version number
-$VERSION = '0.1';
+$VERSION = '0.2';
 
 # by default these are the global varibles that get passed to the module
 # by the engine.
