@@ -198,7 +198,7 @@ sub get_time()
 	my $fh = $self->{'file'};
 	my $line = <$fh> or return undef; 
 
-	elsif( $line =~ m/^$/ or $line =~ m/^\s+$/ )
+	if( $line =~ m/^$/ or $line =~ m/^\s+$/ )
 	{
 		# empty line
 		return \%t_line;
