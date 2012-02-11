@@ -149,7 +149,7 @@ sub get_version()
 sub get_description()
 {
 	# change this value so it reflects the purpose of this module
-	return "Parse the content of a X log file";
+	return "Parse the content of a auditd log file";
 }
 
 #	end
@@ -188,7 +188,10 @@ sub end()
 sub get_time()
 {
 	my $self = shift;
-
+	
+	# log file variables
+	my %li;
+	
 	# the timestamp object
 	my %t_line;
 	my $text;
@@ -198,12 +201,6 @@ sub get_time()
 	my $fh = $self->{'file'};
 	my $line = <$fh> or return undef; 
 
-	# check line, to see if there are any comments or other such non-related stuff
-	if( $line =~ m/^#/ )
-	{
-		# comment, let's skip that one
-		return \%t_line; 
-	}
 	elsif( $line =~ m/^$/ or $line =~ m/^\s+$/ )
 	{
 		# empty line
@@ -213,9 +210,13 @@ sub get_time()
 	# substitute multiple spaces with one for splitting the string into variables
 	$line =~ s/\s+/ /g;
 
-	# some parsing done here ....
-	$text = substr $line,10,10;
-
+	if ($line =~ /^type=([A-Z_]+)\smsg=audit\((\d+)\.\d+:\d+\):\s(.*)$/)  {
+		$li{'type'} = $1;
+		$li{'time'} = $2;
+		$li{'text'} = $3;
+	}
+	
+	
 	# The timestamp object looks something like this:
 	# The fields denoted by [] are optional and might be used by some modules and not others.
 	# The extra field gets in part populated by the main engine, however some fields might be created in the module,
@@ -253,13 +254,12 @@ sub get_time()
 
         # create the t_line variable
         %t_line = (
-                'time' => { 0 => { 'value' => $date, 'type' => 'Time Written', 'legacy' => 15 } },
-                'desc' => $text,
-                'short' => $text,
+                'time' => { 0 => { 'value' => $li{'time'}, 'type' => 'Entry written', 'legacy' => 15 } },
+                'desc' => $li{'text'},
+                'short' => $li{'type'},
                 'source' => 'LOG',
-                'sourcetype' => 'This log file',
+                'sourcetype' => 'Linux auditd Log File',
                 'version' => 2,
-                'extra' => { 'user' => 'username extracted from line' } 
         );
 
 	return \%t_line;
@@ -278,7 +278,7 @@ sub get_help()
 	# than the description field.  It might contain information about the
 	# path names that the file might be found that this module parses, or
 	# URLs for additional information regarding the structure or forensic value of it.
-	return "This parser parses the log file X and it might be found on location Y.";
+	return "This parser parses the auditd log files normaly stored in /var/log/audit";
 }
 
 #	verify
@@ -315,56 +315,34 @@ sub verify
 	# to make things faster, start by checking if this is a file or a directory, depending on what this
 	# modules is about to parse (and to eliminate shortcut files, devices or other non-files immediately)
 	return \%return unless -f ${$self->{'name'}};
-	return \%return unless -d ${$self->{'name'}};
 
         # start by setting the endian correctly
         Log2t::BinRead::set_endian( LITTLE_E );
 
 	my $ofs = 0;
-	
+	my $tag = 1;
 	# now we try to read from the file
-	eval
+	# begin with finding the line that defines the fields that are contained
+	while( $tag )
 	{
-		unless( $self->{'quick'} )
-		{
-			# a firewall log file should start with a comment, or #, let's verify that
-			seek($self->{'file'},0,0);
-			read($self->{'file'},$temp,1);
-			$return{'msg'} = 'Wrong magic value';
-			return \%return unless $temp eq '#';
-		}
-	
-		$tag = 1;
-
-		# begin with finding the line that defines the fields that are contained
-		while( $tag )
-		{
-			$tag = 0 unless $line = Log2t::BinRead::read_ascii_until( $self->{'file'}, \$ofs, "\n", 400 );
-			$tag = 0 if $i++ eq $max;	# check if we have reached the end of our attempts
-			next unless $tag;
-			
-			$line =~ s/\n//;
-			$line =~ s/\r//;
-
-			if( $line =~ m/^magic_quote/ )
-			{
-				$tag = 0;
-				# read the line to get the number of fields
-				$line =~ s/\s+/ /g;
+		$tag = 0 unless $line = Log2t::BinRead::read_ascii_until( $self->{'file'}, \$ofs, "\n", 400 );
+		$tag = 0 if $i++ eq $max;	# check if we have reached the end of our attempts
+		next unless $tag;
 		
-				$return{'success'} = 1;
-			}
+		$line =~ s/\n//;
+		$line =~ s/\r//;
+
+		if( $line =~ /^type=([A-Z_]+)\smsg=audit\((\d+)\.\d+:\d+\):\s(.*)$/ )
+		{
+			$return{'success'} = 1;
+			return \%return;
 		}
-	};
-	if ( $@ )
-	{
-		$return{'success'} = 0;
-		$return{'msg'} = "Unable to process file ($@)";
-
-		return \%return;
 	}
+	
+    $return{'msg'} = "None of the first $max lines fit the format of Linux auditd logs.";
+    $return{'success'} = 0;
 
-	return \%return;
+    return \%return;
 }
 
 1;
