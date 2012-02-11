@@ -252,7 +252,7 @@ sub get_time()
         # create the t_line variable
         %t_line = (
                 'time' => { 0 => { 'value' => $li{'time'}, 'type' => 'Entry written', 'legacy' => 15 } },
-                'desc' => $li{'text'},
+                'desc' => $li{'type'} . ": " . $li{'text'},
                 'short' => $li{'type'},
                 'source' => 'LOG',
                 'sourcetype' => 'Linux auditd Log File',
