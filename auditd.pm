@@ -26,15 +26,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with log2timeline.  If not, see <http://www.gnu.org/licenses/>.
 
-package Log2t::input::logfile;
+package Log2t::input::auditd;
 
 use strict;
 use Log2t::base::input; # the SUPER class or parent
-#use Log2t::Numbers;	# work with numbers, round-up, etc...
-#use Log2t::Network;	# some routines that deal with network information
 use Log2t::BinRead;	# to work with binary files (during verification all files are treaded as such)
 use Log2t::Common ':binary';
-#use Log2t::Time;	# for time manipulations
 use vars qw($VERSION @ISA);
 
 # inherit the base input module, or the super class.
