@@ -254,7 +254,7 @@ sub get_time()
                 'time' => { 0 => { 'value' => $li{'time'}, 'type' => 'Entry written', 'legacy' => 15 } },
                 'desc' => $li{'type'} . ": " . $li{'text'},
                 'short' => $li{'type'},
-                'source' => 'LOG',
+                'source' => 'Auditd Log File',
                 'sourcetype' => 'Linux auditd Log File',
                 'version' => 2,
         );
